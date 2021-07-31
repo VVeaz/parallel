@@ -19,7 +19,7 @@ def create_image(pixels: Tuple, fg_colour: QColor, bg_colour: QColor, save_dir: 
     for i in range(0, 9):
         image.setPixelColor(i % 3, i // 3, colour_pixels[i])
 
-    image.save(fr"{save_dir}/{filename}.png", "png")
+    image.save(fr"images/{save_dir}/{filename}.png", "png", 100)
 
 
 def create_all_possible_permutations_and_gen_image(data: List[int], fg_colour: QColor, bg_colour: QColor,
