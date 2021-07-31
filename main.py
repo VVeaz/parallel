@@ -47,11 +47,13 @@ def generate_all_images(fg_colour: QColor, bg_colour: QColor, save_dir: str):
 
 def create_dirs():
     current = QDir.current()
+    current.mkdir("images")
+    current.cd("images")
 
     dirs_to_create = ["rb", "rg", "br", "bg", "gb", "gr"]
 
     for directory in dirs_to_create:
-        if not current.mkdir(fr"images/{directory}"):
+        if not current.mkdir(directory):
             sys.stderr.write(f"Unable to create dir '{directory}' in {current.absolutePath()}\n")
 
 
