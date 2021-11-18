@@ -1,9 +1,29 @@
 import os
 from PIL import Image
 import numpy as np
+import tensorflow as tf
 
 
 def rgb2int(rgb): return (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
+
+
+def test_parallel(model_for_colour, model_for_shape, x_test, y_test):
+    y_colour_predict = model_for_colour.predict(x_test)  # predict colour
+    y_shape_predict = model_for_shape.predict(x_test)  # predict shape
+    y_predict = []  # here will be cartesian product of result from colour and shape
+
+    for i in range(len(y_colour_predict)):
+        y_predict.append([y_colour_predict[i], y_shape_predict[i]])  # cartesian product
+    y_predict_np = np.squeeze(np.array(y_predict))
+
+    for i in range(len(y_test)):
+        print(y_predict_np[i])  # TODO handmade metrics
+        print(y_test[i])
+        print(y_test[i] == y_predict_np[i])
+    print(y_predict_np.shape)
+    print(y_test.shape)
+
+    # =========================================================== READ DATA
 
 
 # read colour labels from files to array >>labels_from_color<<
@@ -23,10 +43,9 @@ i = 0
 for subdir, dirs, files in os.walk(root_dir):
     for file in files:
         with open(root_dir + "/" + file, "r") as label_shape:
-            labels_from_shapes.append(int(label_shape.read(1)))
-            labels_from_both.append(labels_from_color[i] * labels_from_shapes[i])
+            labels_from_shapes.append(int(label_shape.readline()))
+            labels_from_both.append([labels_from_color[i], labels_from_shapes[i]])
             i += 1
-
 
 root_dir = "one_folder"
 
@@ -36,22 +55,71 @@ for subdir, dirs, files in os.walk(root_dir):
     for file in files:
         img = Image.open(root_dir + "/" + file).convert("RGB")
         pixels = img.load()
-        example = []
+        example_two_dim = []
         img_width, img_height = img.size  # 3 x 3
         for i in range(img_height):
+            example = []
             for j in range(img_width):
                 example.append(rgb2int(pixels[i, j]))
-        x_set_array.append(example)
+            example_two_dim.append(example)
+        x_set_array.append(example_two_dim)
 
-x_set = np.array(x_set_array)
+x_train_set = np.array(x_set_array)
+x_test_set = np.array(x_set_array)  # TODO data should be different than in x_train_set
 
 # make sets of Y (expected responses from neural nets)
-y_set_colour = np.array(labels_from_color)
-y_set_shape = np.array(labels_from_shapes)
-y_set_both = np.array(labels_from_both)
+y_train_set_colour = np.array(labels_from_color)
+y_train_set_shape = np.array(labels_from_shapes)
+y_train_set_both = np.array(labels_from_both)
+y_test_set_both = np.array(labels_from_both)  # TODO data should be different than in y_train_set
+# ===========================================================
 
-print(x_set.shape)
+# ======================================
+# MODELS, so far they are so simple, small
+# --------- a model for recognizing color and shape (which will say, for example, "yes, that's a red square")
+model_both = tf.keras.models.Sequential([
+    tf.keras.layers.Flatten(input_shape=(3, 3)),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dropout(0.2),
+    tf.keras.layers.Dense(2, activation='sigmoid')
+])
 
-print(y_set_colour.shape)
-print(y_set_shape.shape)
-print(y_set_both.shape)
+# --------- a color recognition model (which will say, for example, "yes, that's red")
+model_colour = tf.keras.models.Sequential([
+    tf.keras.layers.Flatten(input_shape=(3, 3)),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dropout(0.2),
+    tf.keras.layers.Dense(1, activation='sigmoid')
+])
+
+# --------- a model for recognizing a shape (which will say, for example, "yes, that's a square")
+model_shape = tf.keras.models.Sequential([
+    tf.keras.layers.Flatten(input_shape=(3, 3)),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dropout(0.2),
+    tf.keras.layers.Dense(1, activation='sigmoid')
+])
+# ======================================
+
+# --- training
+model_both.compile(optimizer='adam',
+                   loss=tf.keras.losses.BinaryCrossentropy(),
+                   metrics=['accuracy'])
+
+model_both.fit(x_train_set, y_train_set_both, epochs=10)
+
+model_colour.compile(optimizer='adam',
+                     loss=tf.keras.losses.BinaryCrossentropy(),
+                     metrics=['accuracy'])
+
+model_colour.fit(x_train_set, y_train_set_colour, epochs=10)
+
+model_shape.compile(optimizer='adam',
+                    loss=tf.keras.losses.BinaryCrossentropy(),
+                    metrics=['accuracy'])
+
+model_shape.fit(x_train_set, y_train_set_shape, epochs=10)
+
+model_both.evaluate(x_test_set, y_test_set_both)  # auto. eval. of the results of the network trained for both features
+
+test_parallel(model_colour, model_shape, x_test_set, y_test_set_both)  # manual testing network consisting of two nets
