@@ -16,7 +16,7 @@ def copy_from_folders_to_one_folder(root_dir, new_dir):
                     # "ALL_ONCE/bg/010101010.png" -> one_folder/bg010101010.png
 
 
-def make_labels(root_dir, label_dir, prefix, shape, colour="x"):
+def make_labels(root_dir, label_dir, prefix, shapes_array, colour="x"):
     for subdir, dirs, files in os.walk(root_dir):
         for file in files:
 
@@ -29,10 +29,12 @@ def make_labels(root_dir, label_dir, prefix, shape, colour="x"):
             os.makedirs(os.path.dirname(label_shape_filename), exist_ok=True)
 
             with open(label_shape_filename, "w") as file_shape:
-                if foreground_shape == shape:
-                    file_shape.write("1")
-                else:
-                    file_shape.write("0")
+                label = "-1"
+                for i in range(len(array_of_shapes)):
+                    if foreground_shape == array_of_shapes[i]:
+                        label = str(i)
+                        break
+                file_shape.write(label)
 
             # label from colour (if it is necessary)
             ########################################
@@ -50,10 +52,17 @@ def make_labels(root_dir, label_dir, prefix, shape, colour="x"):
                         file_colour.write("0")
 
 
-shape_being_searching_for = "100" \
-                            "111" \
-                            "100"
+plus = "010" \
+       "111" \
+       "010"
+circle = "111" \
+         "101" \
+         "111"
+ex = "100" \
+     "010" \
+     "001"
+array_of_shapes = [plus, circle, ex]
 colour_being_searching_for = "r"
 
-# copy_from_folders_to_one_folder("ALL_ONCE", "one_folder")
-make_labels("one_folder", "labels", "label_", shape_being_searching_for, colour_being_searching_for)
+copy_from_folders_to_one_folder("ALL_ONCE", "one_folder")
+make_labels("one_folder", "labels", "label_", array_of_shapes, colour_being_searching_for)
