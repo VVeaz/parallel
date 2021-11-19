@@ -6,6 +6,16 @@ run in a folder one higher than "ALL_ONCE"
 import os
 from shutil import copyfile
 
+from PIL import Image
+
+
+def rgb2int(rgb): return (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
+
+
+letter_to_rgb = {"r": (255, 0, 0), "g": (0, 255, 0), "b": (0, 0, 255)}
+
+letter_to_cat = {"r": 0, "g": 1, "b": 2}
+
 
 def copy_from_folders_to_one_folder(root_dir, new_dir):
     for subdir1, dirs1, files1 in os.walk(root_dir):
@@ -29,13 +39,12 @@ def make_labels(root_dir, label_dir, prefix, shapes_array, colour="x"):
             os.makedirs(os.path.dirname(label_shape_filename), exist_ok=True)
 
             with open(label_shape_filename, "w") as file_shape:
-                label = "-1"
-                for i in range(len(array_of_shapes)):
-                    if foreground_shape == array_of_shapes[i]:
-                        label = str(i)
+                label = "0"
+                for i in range(len(shapes_array)):
+                    if foreground_shape == shapes_array[i]:
+                        label = str(i+1)
                         break
                 file_shape.write(label)
-
             # label from colour (if it is necessary)
             ########################################
 
@@ -46,10 +55,8 @@ def make_labels(root_dir, label_dir, prefix, shapes_array, colour="x"):
                 os.makedirs(os.path.dirname(label_colour_filename), exist_ok=True)
 
                 with open(label_colour_filename, "w") as file_colour:
-                    if foreground_colour == colour:
-                        file_colour.write("1")
-                    else:
-                        file_colour.write("0")
+                    # file_colour.write(str(rgb2int(letter_to_rgb[foreground_colour])))
+                    file_colour.write(str(letter_to_cat[foreground_colour]))
 
 
 plus = "010" \
