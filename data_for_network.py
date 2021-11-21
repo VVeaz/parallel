@@ -131,7 +131,7 @@ model_colour = build_colour_model()
 model_shape = build_shape_model()
 # ======================================
 # --- compiling
-model_both.compile(optimizer='adam',  # RAV
+model_both.compile(optimizer='adam',
                    loss={'colour_output': tf.keras.losses.CategoricalCrossentropy(),
                          'shape_output': tf.keras.losses.CategoricalCrossentropy()
                          },
