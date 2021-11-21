@@ -24,7 +24,53 @@ def copy_from_folders_to_one_folder(root_dir, new_dir):
                 for file in files:
                     copyfile(os.path.join(subdir, file), os.path.join(new_dir, dire + file))
                     # "ALL_ONCE/bg/010101010.png" -> one_folder/bg010101010.png
+                    
+                    
+def make_good_labels(root_dir, examples_dir, colour_dir, shape_dir, shapes_array):
+    numbers = random.sample(range(10000), 10000)
+    size = 0
+    if os.path.isdir(examples_dir) and os.path.isdir(colour_dir) and os.path.isdir(shape_dir):
+        shutil.rmtree(examples_dir)
+        shutil.rmtree(colour_dir)
+        shutil.rmtree(shape_dir)
 
+    os.makedirs(examples_dir)  # here will be examples (pictures) with fitting shapes
+    os.makedirs(colour_dir)  # here will be colour labels
+    os.makedirs(shape_dir)  # here will be shape labels
+
+    for subdir, dirs, files in os.walk(root_dir):
+        for file in files:
+
+            # label from shape
+            ###################
+            clean_file_name = file.split(".")[0]  # without extension, example: bg010101010
+            foreground_shape = clean_file_name[2:]  # example: 010101010
+            for i in range(len(shapes_array)):
+                if foreground_shape == shapes_array[i]:
+                    shape_cat = i
+                    factor = random.randint(500, 555)
+                    for f in range(factor):
+                        number = numbers.pop()
+                        old_picture_file_path = os.path.join(root_dir, file)
+                        new_picture_file_path = os.path.join(examples_dir, "picture" + str(number) + ".png")
+                        new_label_shape_filename = os.path.join(shape_dir,
+                                                                "shape" + str(number) + ".txt")
+                        os.makedirs(os.path.dirname(new_label_shape_filename), exist_ok=True)
+                        new_colour_shape_filename = os.path.join(colour_dir,
+                                                                 "colour" + str(number) + ".txt")
+                        os.makedirs(os.path.dirname(new_colour_shape_filename), exist_ok=True)
+
+                        copyfile(old_picture_file_path, new_picture_file_path)
+                        # one_folder/bg111101111.png -> pictureRANDOM.png
+                        
+                        with open(new_label_shape_filename, 'w') as new_file_shape:
+                            new_file_shape.write(str(shape_cat))
+                        with open(new_colour_shape_filename, 'w') as new_file_colour:
+                            foreground_colour = clean_file_name[0]  # example: b
+                            new_file_colour.write(str(letter_to_cat[foreground_colour]))
+                        size += 1
+    print(str(size) + "<------ size")
+                    
 
 def make_labels(root_dir, label_dir, prefix, shapes_array, colour="x"):
     for subdir, dirs, files in os.walk(root_dir):
@@ -72,4 +118,5 @@ array_of_shapes = [plus, circle, ex]
 colour_being_searching_for = "r"
 
 copy_from_folders_to_one_folder("ALL_ONCE", "one_folder")
-make_labels("one_folder", "labels", "label_", array_of_shapes, colour_being_searching_for)
+# make_labels("one_folder", "labels", "label_", array_of_shapes, colour_being_searching_for)
+make_good_labels("one_folder", "good_examples", "new_labels_colours", "new_labels_shapes", array_of_shapes)
