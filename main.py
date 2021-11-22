@@ -1,5 +1,4 @@
 import sys
-from itertools import permutations
 from typing import List, Tuple
 
 from PySide6.QtCore import Qt, QSize, QDir
@@ -26,30 +25,13 @@ def create_image(pixels: Tuple, fg_colour: QColor, bg_colour: QColor, save_dir: 
     image.save(fr"images/{save_dir}/{filename}.png", "png", 100)
 
 
-def create_all_possible_permutations_and_gen_image(data: List[int], fg_colour: QColor, bg_colour: QColor,
-                                                   save_dir: str):
-    unique = set()
-    for p in permutations(data):
-        unique.add(p)
-
-    for permutation in unique:
-        create_image(permutation, fg_colour, bg_colour, save_dir)
-
-
 def generate_all_images(fg_colour: QColor, bg_colour: QColor, save_dir: str):
     create_dir(save_dir)
-    pixels = [0] * (IMAGE_HEIGHT * IMAGE_WIDTH)
 
-    # Optimization to not permute
-    create_image(tuple(pixels), fg_colour, bg_colour, save_dir)
-
-    for i in range(len(pixels) - 1):
-        pixels[i] = 1
-        create_all_possible_permutations_and_gen_image(pixels, fg_colour, bg_colour, save_dir)
-
-    pixels[-1] = 1
-    # Optimization to not permute
-    create_image(tuple(pixels), fg_colour, bg_colour, save_dir)
+    fixed_length = IMAGE_HEIGHT * IMAGE_WIDTH
+    for i in range(2 ** (IMAGE_HEIGHT * IMAGE_WIDTH) - 1):
+        pixels = f"{i:0{fixed_length}b}"
+        create_image(tuple(map(lambda x: int(x), pixels)), fg_colour, bg_colour, save_dir)
 
 
 def create_dir(save_dir: str):
