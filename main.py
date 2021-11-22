@@ -10,15 +10,18 @@ GREEN = Qt.GlobalColor.green
 BLUE = Qt.GlobalColor.blue
 BLACK = Qt.GlobalColor.black
 
+IMAGE_HEIGHT = 3
+IMAGE_WIDTH = 3
+
 
 def create_image(pixels: Tuple, fg_colour: QColor, bg_colour: QColor, save_dir: str):
     filename = "".join(map(str, pixels))
     colour_pixels = list(map(lambda x: fg_colour if x == 1 else bg_colour, pixels))
 
-    image = QImage(QSize(3, 3), QImage.Format.Format_RGB32)
+    image = QImage(QSize(IMAGE_WIDTH, IMAGE_HEIGHT), QImage.Format.Format_RGB32)
 
-    for i in range(0, 9):
-        image.setPixelColor(i % 3, i // 3, colour_pixels[i])
+    for i in range(0, IMAGE_WIDTH * IMAGE_HEIGHT):
+        image.setPixelColor(i % IMAGE_WIDTH, i // IMAGE_WIDTH, colour_pixels[i])
 
     image.save(fr"images/{save_dir}/{filename}.png", "png", 100)
 
@@ -35,17 +38,18 @@ def create_all_possible_permutations_and_gen_image(data: List[int], fg_colour: Q
 
 def generate_all_images(fg_colour: QColor, bg_colour: QColor, save_dir: str):
     create_dir(save_dir)
-    pixels = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    pixels = [0] * (IMAGE_HEIGHT * IMAGE_WIDTH)
 
     # Optimization to not permute
-    create_image((0, 0, 0, 0, 0, 0, 0, 0, 0), fg_colour, bg_colour, save_dir)
+    create_image(tuple(pixels), fg_colour, bg_colour, save_dir)
 
     for i in range(len(pixels) - 1):
         pixels[i] = 1
         create_all_possible_permutations_and_gen_image(pixels, fg_colour, bg_colour, save_dir)
 
+    pixels[-1] = 1
     # Optimization to not permute
-    create_image((1, 1, 1, 1, 1, 1, 1, 1, 1), fg_colour, bg_colour, save_dir)
+    create_image(tuple(pixels), fg_colour, bg_colour, save_dir)
 
 
 def create_dir(save_dir: str):
