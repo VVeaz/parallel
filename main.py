@@ -8,6 +8,7 @@ from PySide6.QtGui import QImage, QColor
 RED = Qt.GlobalColor.red
 GREEN = Qt.GlobalColor.green
 BLUE = Qt.GlobalColor.blue
+BLACK = Qt.GlobalColor.black
 
 
 def create_image(pixels: Tuple, fg_colour: QColor, bg_colour: QColor, save_dir: str):
