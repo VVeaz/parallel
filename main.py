@@ -34,36 +34,38 @@ def create_all_possible_permutations_and_gen_image(data: List[int], fg_colour: Q
 
 
 def generate_all_images(fg_colour: QColor, bg_colour: QColor, save_dir: str):
+    create_dir(save_dir)
+    pixels = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    # Optimization to not permute
     create_image((0, 0, 0, 0, 0, 0, 0, 0, 0), fg_colour, bg_colour, save_dir)
-    create_all_possible_permutations_and_gen_image([1, 0, 0, 0, 0, 0, 0, 0, 0], fg_colour, bg_colour, save_dir)
-    create_all_possible_permutations_and_gen_image([1, 1, 0, 0, 0, 0, 0, 0, 0], fg_colour, bg_colour, save_dir)
-    create_all_possible_permutations_and_gen_image([1, 1, 1, 0, 0, 0, 0, 0, 0], fg_colour, bg_colour, save_dir)
-    create_all_possible_permutations_and_gen_image([1, 1, 1, 1, 0, 0, 0, 0, 0], fg_colour, bg_colour, save_dir)
-    create_all_possible_permutations_and_gen_image([1, 1, 1, 1, 1, 0, 0, 0, 0], fg_colour, bg_colour, save_dir)
-    create_all_possible_permutations_and_gen_image([1, 1, 1, 1, 1, 1, 0, 0, 0], fg_colour, bg_colour, save_dir)
-    create_all_possible_permutations_and_gen_image([1, 1, 1, 1, 1, 1, 1, 0, 0], fg_colour, bg_colour, save_dir)
-    create_all_possible_permutations_and_gen_image([1, 1, 1, 1, 1, 1, 1, 1, 0], fg_colour, bg_colour, save_dir)
+
+    for i in range(len(pixels) - 1):
+        pixels[i] = 1
+        create_all_possible_permutations_and_gen_image(pixels, fg_colour, bg_colour, save_dir)
+
+    # Optimization to not permute
     create_image((1, 1, 1, 1, 1, 1, 1, 1, 1), fg_colour, bg_colour, save_dir)
 
 
-def create_dirs():
+def create_dir(save_dir: str):
     current = QDir.current()
+
+    # It may fail but we do not care, it could already exist
     current.mkdir("images")
     current.cd("images")
 
-    dirs_to_create = ["rb", "rg", "br", "bg", "gb", "gr"]
-
-    for directory in dirs_to_create:
-        if not current.mkdir(directory):
-            sys.stderr.write(f"Unable to create dir '{directory}' in {current.absolutePath()}\n")
+    if not current.mkdir(save_dir):
+        sys.stderr.write(f"Unable to create dir '{save_dir}' in {current.absolutePath()}\n")
 
 
 if __name__ == "__main__":
-    create_dirs()
-
-    generate_all_images(RED, BLUE, "rb")
-    generate_all_images(RED, GREEN, "rg")
-    generate_all_images(BLUE, RED, "br")
-    generate_all_images(BLUE, GREEN, "bg")
-    generate_all_images(GREEN, RED, "gr")
-    generate_all_images(GREEN, BLUE, "gb")
+    # generate_all_images(RED, BLUE, "rb")
+    # generate_all_images(RED, GREEN, "rg")
+    # generate_all_images(BLUE, RED, "br")
+    # generate_all_images(BLUE, GREEN, "bg")
+    # generate_all_images(GREEN, RED, "gr")
+    # generate_all_images(GREEN, BLUE, "gb")
+    generate_all_images(RED, BLACK, "rbl")
+    generate_all_images(GREEN, BLACK, "gbl")
+    generate_all_images(BLUE, BLACK, "bbl")
