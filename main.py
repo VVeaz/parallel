@@ -12,10 +12,15 @@ BLACK = Qt.GlobalColor.black
 IMAGE_HEIGHT = 3
 IMAGE_WIDTH = 3
 
+# To make a frame around real image it's possible to turn off some pixels
+# Mark pixel as 0 to turn it off. By default all pixels are turned on.
+OFF_PIXELS = (1,) * (IMAGE_WIDTH * IMAGE_WIDTH)
+
 
 def create_image(pixels: Tuple, fg_colour: QColor, bg_colour: QColor, save_dir: str):
     filename = "".join(map(str, pixels))
-    colour_pixels = list(map(lambda x: fg_colour if x == 1 else bg_colour, pixels))
+
+    colour_pixels = list(map(lambda x: fg_colour if x[0] and x[1] else bg_colour, zip(pixels, OFF_PIXELS)))
 
     image = QImage(QSize(IMAGE_WIDTH, IMAGE_HEIGHT), QImage.Format.Format_RGB32)
 
