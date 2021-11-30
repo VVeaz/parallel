@@ -3,3 +3,6 @@
 
 # Generated images
 *.png
+
+# IDE files
+.idea/
