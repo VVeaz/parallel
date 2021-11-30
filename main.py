@@ -27,7 +27,8 @@ def create_image(pixels: Tuple, fg_colour: QColor, bg_colour: QColor, save_dir: 
     for i in range(0, IMAGE_WIDTH * IMAGE_HEIGHT):
         image.setPixelColor(i % IMAGE_WIDTH, i // IMAGE_WIDTH, colour_pixels[i])
 
-    image.save(fr"images/{save_dir}/{filename}.png", "png", 100)
+    if not image.save(fr"images/{save_dir}/{filename}.png", "png", 100):
+        sys.stderr.write(f"Unable to save picture: {filename}.png")
 
 
 def generate_all_images(fg_colour: QColor, bg_colour: QColor, save_dir: str):
