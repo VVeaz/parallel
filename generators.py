@@ -19,7 +19,7 @@ class ImageGenerator:
         image.fill(bg_colour)  # Set background colour (whole picture is painted by given colour)
 
         for i in range(0, IMAGE_WIDTH * IMAGE_HEIGHT):
-            if colour_pixels[i] == BLACK:
+            if colour_pixels[i] == bg_colour:
                 continue
             image.setPixelColor(i % IMAGE_WIDTH, i // IMAGE_WIDTH, colour_pixels[i])
 
