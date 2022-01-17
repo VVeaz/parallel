@@ -1,8 +1,0 @@
-# Project exclude paths
-/venv/
-
-# Generated images
-*.png
-
-# IDE files
-.idea/
