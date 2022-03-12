@@ -1,0 +1,180 @@
+"""
+This is LaBeLaToR
+run in a folder one higher than "ALL_ONCE"
+"""
+import glob
+import os
+import random
+import shutil
+from shutil import copyfile
+
+from PIL import Image
+
+
+def rgb2int(rgb): return (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
+
+
+letter_to_rgb = {"r": (255, 0, 0), "g": (0, 255, 0), "b": (0, 0, 255)}
+
+letter_to_cat = {"r": 0, "g": 1, "b": 2}
+
+
+def copy_from_folders_to_one_folder(root_dir, new_dir):
+    for subdir1, dirs1, files1 in os.walk(root_dir):
+        for dire in dirs1:  # rg, gb,.. etc.
+            for subdir, dirs, files in os.walk(os.path.join(root_dir, dire)):
+                for file in files:
+                    copyfile(os.path.join(subdir, file), os.path.join(new_dir, dire + file))
+                    # "ALL_ONCE/bg/010101010.png" -> one_folder/bg010101010.png
+
+
+def make_good_labels(root_dir, examples_dir, colour_dir, shape_dir, shapes_array, split_for_shape=2,
+                     index_foreground_colour=0):
+    numbers = random.sample(range(10000), 10000)
+    size = 0
+    if os.path.isdir(examples_dir) and os.path.isdir(colour_dir) and os.path.isdir(shape_dir):
+        shutil.rmtree(examples_dir)
+        shutil.rmtree(colour_dir)
+        shutil.rmtree(shape_dir)
+
+    os.makedirs(examples_dir)  # here will be examples (pictures) with fitting shapes
+    os.makedirs(colour_dir)  # here will be colour labels
+    os.makedirs(shape_dir)  # here will be shape labels
+
+    for subdir, dirs, files in os.walk(root_dir):
+        for file in files:
+
+            # label from shape
+            ###################
+            clean_file_name = file.split(".")[0]  # without extension, example: bg010101010
+            foreground_shape = clean_file_name[split_for_shape:]  # example: 010101010
+            for i in range(len(shapes_array)):
+                if foreground_shape == shapes_array[i]:
+                    shape_cat = i
+                    factor = random.randint(1000, 1100)
+                    for f in range(factor):
+                        if len(numbers) > 0 :
+                            number = numbers.pop()
+                            old_picture_file_path = os.path.join(root_dir, file)
+                            new_picture_file_path = os.path.join(examples_dir, "picture" + str(number) + ".png")
+                            new_label_shape_filename = os.path.join(shape_dir,
+                                                                    "shape" + str(number) + ".txt")
+                            os.makedirs(os.path.dirname(new_label_shape_filename), exist_ok=True)
+                            new_colour_shape_filename = os.path.join(colour_dir,
+                                                                     "colour" + str(number) + ".txt")
+                            os.makedirs(os.path.dirname(new_colour_shape_filename), exist_ok=True)
+
+                            shutil.copyfile(old_picture_file_path, new_picture_file_path)
+                            with open(new_label_shape_filename, 'w') as new_file_shape:
+                                new_file_shape.write(str(shape_cat))
+                            with open(new_colour_shape_filename, 'w') as new_file_colour:
+                                foreground_colour = clean_file_name[index_foreground_colour]  # example: b
+                                new_file_colour.write(str(letter_to_cat[foreground_colour]))
+                            size += 1
+    print(str(size) + "<------ size")
+
+
+def make_labels(root_dir, label_dir, prefix, shapes_array, new_dir, colour="x"):
+    size = 0
+    shutil.rmtree('good_examples')
+    os.makedirs("good_examples")
+    shutil.rmtree('new_labels_shapes')
+    os.makedirs("new_labels_shapes")
+    shutil.rmtree('new_labels_colours')
+    os.makedirs("new_labels_colours")
+    numbers = random.sample(range(5000), 5000)
+    for subdir, dirs, files in os.walk(root_dir):
+        for file in files:
+
+            # label from shape
+            ###################
+            clean_file_name = file.split(".")[0]  # without extension, example: bg010101010
+            foreground_shape = clean_file_name[2:]  # example: 010101010
+
+            label_shape_filename = os.path.join(label_dir + "_shapes", prefix + clean_file_name + ".txt")
+            os.makedirs(os.path.dirname(label_shape_filename), exist_ok=True)
+
+            with open(label_shape_filename, "w") as file_shape:
+                label = "0"
+                for i in range(len(shapes_array)):
+                    if foreground_shape == shapes_array[i]:
+                        shape_cat = i
+                        factor = random.randint(165, 170)
+                        for f in range(factor):
+                            number = numbers.pop()
+                            old_picture_file_path = os.path.join(root_dir, file)
+                            new_picture_file_path = os.path.join(new_dir, "picture" + str(number) + ".png")
+                            new_label_shape_filename = os.path.join("new_" + label_dir + "_shapes",
+                                                                    "shape" + str(number) + ".txt")
+                            os.makedirs(os.path.dirname(new_label_shape_filename), exist_ok=True)
+                            new_colour_shape_filename = os.path.join("new_" + label_dir + "_colours",
+                                                                     "colour" + str(number) + ".txt")
+                            os.makedirs(os.path.dirname(new_colour_shape_filename), exist_ok=True)
+                            print(old_picture_file_path)
+                            print(new_picture_file_path)
+                            print(new_label_shape_filename)
+                            print(new_colour_shape_filename)
+                            shutil.copyfile(old_picture_file_path, new_picture_file_path)
+                            with open(new_label_shape_filename, 'w') as new_file_shape:
+                                new_file_shape.write(str(shape_cat))
+                            with open(new_colour_shape_filename, 'w') as new_file_colour:
+                                foreground_colour = clean_file_name[0]  # example: b
+                                new_file_colour.write(str(letter_to_cat[foreground_colour]))
+                            size += 1
+                        label = str(i + 1)
+                        break
+                file_shape.write(label)
+            # label from colour (if it is necessary)
+            ########################################
+            print(str(size) + "<---------- size")
+            if colour != "x":
+                foreground_colour = clean_file_name[0]  # example: b
+
+                label_colour_filename = os.path.join(label_dir + "_colours", prefix + file.split(".")[0] + ".txt")
+                os.makedirs(os.path.dirname(label_colour_filename), exist_ok=True)
+
+                with open(label_colour_filename, "w") as file_colour:
+                    # file_colour.write(str(rgb2int(letter_to_rgb[foreground_colour])))
+                    file_colour.write(str(letter_to_cat[foreground_colour]))
+
+
+plus = "010" \
+       "111" \
+       "010"
+circle = "111" \
+         "101" \
+         "111"
+ex = "101" \
+     "010" \
+     "101"
+
+plus_frame = "00000" \
+             "00100" \
+             "01110" \
+             "00100" \
+             "00000"
+circle_frame = "00000" \
+               "01110" \
+               "01010" \
+               "01110" \
+               "00000"
+ex_frame = "00000" \
+           "01010" \
+           "00100" \
+           "01010" \
+           "00000"
+
+array_of_shapes = [plus, circle, ex]
+colour_being_searching_for = "r"
+
+# copy_from_folders_to_one_folder("ALL_ONCE_FRAME", "one_folder_frame")
+# make_labels("one_folder", "labels", "label_", array_of_shapes, "good_examples", colour_being_searching_for)
+make_good_labels("one_folder", "good_examples", "new_labels_colours", "new_labels_shapes", array_of_shapes)
+
+# make_good_labels("one_folder_bl", "good_examples_bl", "new_labels_colours_bl", "new_labels_shapes_bl",
+#                  array_of_shapes, 3)
+
+# array_of_shapes_frame = [plus_frame, circle_frame, ex_frame]
+#
+# make_good_labels("one_folder_frame", "good_examples_frame", "labels_colours_frame", "labels_shapes_frame",
+#                  array_of_shapes_frame, 9, 6)
