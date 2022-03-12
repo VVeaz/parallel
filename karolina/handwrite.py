@@ -5,6 +5,9 @@ import random as rnd
 import imageio
 import numpy as np
 import os
+import cv2
+from PIL import Image
+from tensorflow.keras.utils import to_categorical
 from own_functions import load_pictures, read_labels, test_parallel, metrics
 from tensorflow.python.keras import Model, Input
 from tensorflow.python.keras.layers import Dense
@@ -94,6 +97,37 @@ def colour_digit(not_coloured_digit, colour_background=False, colour_background_
     return coloured_digit, colour_number
 
 
+def to_rgb(not_coloured_digit):
+    one_back_colour = [0, 0, 0]
+    one_forground = [255, 255, 255]
+    coloured_digit = []
+    c = 0
+    for row in not_coloured_digit:
+        d = 0
+        one_row = []
+        for pixel in row:
+            if pixel != 0:
+                one_row.append(tf.convert_to_tensor(one_forground, dtype=tf.uint8))
+            else:
+                one_row.append(tf.convert_to_tensor(one_back_colour, dtype=tf.uint8))
+            d += 1
+        one_row_tensor = tf.convert_to_tensor(one_row)
+        coloured_digit.append(one_row_tensor)
+        c += 1
+    return coloured_digit
+
+
+def save_gray_set(dataset, root_dir):
+    coloured_dataset = []
+    colour_labels = []
+    c = 0
+    for img in dataset:
+        coloured_img = to_rgb(img)
+        coloured_dataset.append(coloured_img)
+        imageio.imwrite(root_dir + "/example_" + str(c) + ".png", np.array(coloured_img))
+        c += 1
+
+
 #  this function colors the picture set with numbers, save it in root_dir, and save color labels
 #  in colour_labels_di
 def colour_dataset(dataset, root_dir, colour_background=False, colour_background_randomly=False,
@@ -155,7 +189,16 @@ def build_shape_model():
     return Model(inputs=input_layer, outputs=[y2_output])
 
 
-# (train_images, train_labels), (test_images, test_labels) = mnist.load_data()
+def gray_to_rgb(picture_set):
+    rgb_set = []
+    for pic in picture_set:
+        rgb_set.append(cv2.cvtColor(pic, cv2.COLOR_GRAY2RGB))
+    return rgb_set
+
+
+(train_images, train_labels), (test_images, test_labels) = mnist.load_data()
+# train_images = train_images.reshape((train_images.shape[0], 28, 28, 1))
+# save_gray_set(train_images, "black_white_digits")
 # train_images - 60000 black&white handwrite digits;
 # test_images - 10000 black&white handwrite digits;
 # colored below
@@ -181,7 +224,7 @@ def build_shape_model():
 
 # -----------------------------------------------------------------------
 # ----- this is for not change values in many places when we decide to explore a different type of pictures
-type_picture = "c"
+type_picture = "gb"
 #  b - background is black
 #  c - background is red or green or blue
 #  r - background is red or green or blue (but pixels could be different)
@@ -190,42 +233,83 @@ type_picture = "c"
 pictures_train = {
     "b": "digits_coloured_train",
     "c": "colourful_background/digits_train",
-    "r": "colourful_background_random/digits_train"
+    "r": "colourful_background_random/digits_train",
+    "gb": "generated_colorful_black_bg/digits_train",
+    "gc": "generated_colorful_color_bg/digits_train",
+    "gr": "generated_colorful_color_bg_random/digits_train"
 }
 
 # where are coloured pictures to test
 pictures_test = {
     "b": "digits_coloured_test",
     "c": "colourful_background/digits_test",
-    "r": "colourful_background_random/digits_test"
+    "r": "colourful_background_random/digits_test",
+    "gb": "generated_colorful_black_bg/digits_test",
+    "gc": "generated_colorful_color_bg/digits_test",
+    "gr": "generated_colorful_color_bg_random/digits_test"
 }
 
 # where are labels of colors to train
 labels_train = {
     "b": "digits_labels_colour_train",
     "c": "colourful_background/labels_train",
-    "r": "colourful_background_random/labels_train"
+    "r": "colourful_background_random/labels_train",
+    "gb": "generated_colorful_black_bg/color_labels_train",
+    "gc": "generated_colorful_color_bg/color_labels_train",
+    "gr": "generated_colorful_color_bg_random/color_labels_train"
 }
 
 # where are labels of colors to test
 labels_test = {
     "b": "digits_labels_colour_test",
     "c": "colourful_background/labels_test",
-    "r": "colourful_background_random/labels_test"
+    "r": "colourful_background_random/labels_test",
+    "gb": "generated_colorful_black_bg/color_labels_test",
+    "gc": "generated_colorful_color_bg/color_labels_test",
+    "gr": "generated_colorful_color_bg_random/color_labels_test"
 }
 
+shape_labels_train = {
+    "b": "digits_labels_shapes_train",
+    "c": "digits_labels_shapes_train",
+    "r": "digits_labels_shapes_train",
+    "gb": "generated_colorful_black_bg/shape_labels_train",
+    "gc": "generated_colorful_color_bg/shape_labels_train",
+    "gr": "generated_colorful_color_bg_random/shape_labels_train"
+}
+shape_labels_test = {
+    "b": "digits_labels_shapes_test",
+    "c": "digits_labels_shapes_test",
+    "r": "digits_labels_shapes_test",
+    "gb": "generated_colorful_black_bg/shape_labels_test",
+    "gc": "generated_colorful_color_bg/shape_labels_test",
+    "gr": "generated_colorful_color_bg_random/shape_labels_test"
+}
+
+black_images = {
+    "b": "black_white_digits",
+    "c": "black_white_digits",
+    "r": "black_white_digits",
+    "gb": "generated_colorful_black_bg/digits_bw_train",
+    "gc": "generated_colorful_color_bg/digits_bw_train",
+    "gr": "generated_colorful_color_bg_random/digits_bw_train"
+}
+blacks_img = load_pictures(black_images[type_picture])
 coloured_train_images = load_pictures(pictures_train[type_picture])  # train images load to array of array
 coloured_test_images = load_pictures(pictures_test[type_picture])  # test images load to array of array
 #
 labels_colour_train, labels_shapes_train, labels_both_train = read_labels(labels_train[type_picture],
-                                                                          "digits_labels_shapes_train")
+                                                                          shape_labels_train[type_picture])
+                                                                          # "digits_labels_shapes_train")
 # "digits_labels_shapes_train" is hardcoded because labels for shapes are the same for all types of pictures
 
 labels_colour_test, labels_shapes_test, labels_both_test = read_labels(labels_test[type_picture],
-                                                                       "digits_labels_shapes_test")
+                                                                        shape_labels_test[type_picture])
+                                                                       # "digits_labels_shapes_test")
 # "digits_labels_shapes_train" is hardcoded because labels for shapes are the same for all types of pictures
 
 # make sets of X (expected inputs to neural nets)
+x_train_black = np.array(blacks_img)
 x_train = np.array(coloured_train_images)
 x_test = np.array(coloured_test_images)
 
@@ -258,6 +342,8 @@ def train_and_test():
                        }
                        ,
                        metrics=['accuracy', tf.metrics.Precision()])
+    print("Both summary:")
+    print(model_both.summary())
     model_colour.compile(optimizer='adam',
                          loss=
                          {
@@ -270,43 +356,49 @@ def train_and_test():
                             'shape_output': tf.keras.losses.CategoricalCrossentropy()
                         },
                         metrics=['accuracy', tf.metrics.Precision()])
+    print("Shape summary:")
+    print(model_shape.summary())
 
     #  mix sets
-    x_train_sh, y_set_colour_train_sh, y_set_shape_train_sh = shuffle_sets(coloured_train_images, labels_colour_train,
-                                                                           labels_shapes_train)
-    print("Without training one network (both features): ==================")
-    print(metrics(model_both.predict(x_test), y_set_both_test, NUMBER_OF_COLOURS, NUMBER_OF_SHAPES))
-    result = model_both.evaluate(x_test, y_set_both_test)
-    print(dict(zip(model_both.metrics_names, result)))
+    # x_train_sh, y_set_colour_train_sh, y_set_shape_train_sh = shuffle_sets(coloured_train_images, labels_colour_train,
+    #                                                                        labels_shapes_train)
+    # print("Without training one network (both features): ==================")
+    # print(metrics(model_both.predict(x_test), y_set_both_test, NUMBER_OF_COLOURS, NUMBER_OF_SHAPES))
+    # result = model_both.evaluate(x_test, y_set_both_test)
+    # print(dict(zip(model_both.metrics_names, result)))
 
     #  train one network (both features)
-    history = model_both.fit(x_train_sh, [y_set_colour_train_sh, y_set_shape_train_sh], epochs=3)
+    model_both.fit(x_train, [y_set_colour_train, y_set_shape_train], epochs=1)
 
     #  look at how shape_output_accuracy is changed in this model
-    plt.interactive(False)
-    plt.plot(history.history['shape_output_accuracy'])
-    plt.show()
+    # plt.interactive(False)
+    # plt.plot(history.history['shape_output_accuracy'])
+    # plt.show()
 
     #  mix sets again
-    x_train_sh, y_set_colour_train_sh, y_set_shape_train_sh = shuffle_sets(coloured_train_images, labels_colour_train,
-                                                                           labels_shapes_train)
+
+    # x_train_sh, y_set_colour_train_sh, y_set_shape_train_sh = shuffle_sets(coloured_train_images, labels_colour_train,
+    #                                                                        labels_shapes_train)
     print("Without training parallel (accuracy):-------------------")
-    print(test_parallel(
-        model_colour, model_shape, x_test, y_set_both_test, NUMBER_OF_COLOURS, NUMBER_OF_SHAPES))  # accuracy
-    result = model_shape.evaluate(x_test, y_set_shape_test)
-    print("Without training (shape model):-------------------")
-    print(dict(zip(model_shape.metrics_names, result)))
+    # print(test_parallel(
+    #     model_colour, model_shape, x_test, y_set_both_test, NUMBER_OF_COLOURS, NUMBER_OF_SHAPES))  # accuracy
+    # result = model_shape.evaluate(x_test, y_set_shape_test)
+    # print("Without training (shape model):-------------------")
+    # print(dict(zip(model_shape.metrics_names, result)))
 
     #  train model colour
-    model_colour.fit(x_train_sh, y_set_colour_train_sh, epochs=1)
-
+    model_colour.fit(x_train, y_set_colour_train, epochs=1)
+    #
+    # x_train_sh, y_set_colour_train_sh, y_set_shape_train_sh = shuffle_sets(train_images, labels_colour_train,
+    #                                                                        labels_shapes_train)
     #  train model shape
-    history = model_shape.fit(x_train_sh, y_set_shape_train_sh, epochs=3)
+    model_shape.fit(x_train_black, y_set_shape_train, epochs=1)
+    model_shape.fit(x_train, y_set_shape_train, epochs=1)
 
     #  look at how accuracy is changed in this model
-    plt.interactive(False)
-    plt.plot(history.history['accuracy'])
-    plt.show()
+    # plt.interactive(False)
+    # plt.plot(history.history['accuracy'])
+    # plt.show()
 
     return metrics(model_both.predict(x_test), y_set_both_test, NUMBER_OF_COLOURS, NUMBER_OF_SHAPES), test_parallel(
         model_colour, model_shape, x_test, y_set_both_test, NUMBER_OF_COLOURS, NUMBER_OF_SHAPES)
@@ -329,9 +421,38 @@ def test_and_train_times(iterations=5):
     print(sum(pars) / iterations)
     print(pars)
 
+#
+# both, par = train_and_test()
+# print("Accuracy one network (both features): " + str(both))
+# print("Accuracy parallel network: " + str(par))
 
-both, par = train_and_test()
-print("Accuracy one network (both features): " + str(both))
-print("Accuracy parallel network: " + str(par))
+# test_and_train_times(10)
 
-# test_and_train_times()
+# statistic_digits = {0: [0, 0, 0], 1: [0, 0, 0], 2: [0, 0, 0], 3: [0, 0, 0], 4: [0, 0, 0], 5: [0, 0, 0],
+#                     6: [0, 0, 0], 7: [0, 0, 0], 8: [0, 0, 0], 9: [0, 0, 0]}
+# ind = 0
+# for label in labels_shapes_train:
+#     statistic_digits[label][int(labels_colour_train[ind])] += 1
+#     ind += 1
+#
+# print(statistic_digits)
+
+def save_coloured_generated_set_of_digits(directory_with_base, dir_for_pic, dir_for_bw_pic, dir_for_color, dir_for_shape, colour_background=False, colour_background_randomly=False):
+    for subdir, dirs, files in os.walk(directory_with_base):
+        for file in files:
+
+            # label from shape
+            ###################
+            img = imageio.imread(directory_with_base+"/"+file, pilmode="L")
+            shape_of_digit = file.split(".")[0]
+            factor = rnd.randint(171, 180)
+            for i in range(factor):
+                coloured_img, colour_nr = colour_digit(img, colour_background, colour_background_randomly)
+
+                imageio.imwrite(dir_for_bw_pic+ "/generated_" + str(i) + "_" + str(shape_of_digit) + ".png",
+                                img)
+                imageio.imwrite(dir_for_pic + "/generated_" + str(i) + "_" + str(shape_of_digit) + ".png", np.array(coloured_img))
+                save_label_to_file(colour_nr, str(i) + '_' + shape_of_digit, dir_for_color)
+                save_label_to_file(shape_of_digit, str(i) + '_' + shape_of_digit, dir_for_shape)
+
+
