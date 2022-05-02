@@ -40,10 +40,11 @@ def read_labels(dir_colour, dir_shape):
     i = 0
     for subdir, dirs, files in os.walk(root_dir):
         for file in sorted(files):
-            with open(root_dir + "/" + file, "r") as label_shape:
-                labels_shap.append(int(label_shape.readline()))
-                labels_both.append([labels_col[i], labels_shap[i]])
-                i += 1
+            if file != ".directory":
+                with open(root_dir + "/" + file, "r") as label_shape:
+                    labels_shap.append(int(label_shape.readline()))
+                    labels_both.append([labels_col[i], labels_shap[i]])
+                    i += 1
     return labels_col, labels_shap, labels_both
 
 
@@ -66,3 +67,5 @@ def test_parallel(model_for_colour, model_for_shape, x_test, y_test, number_of_c
     y_predict = [y_colour_predict, y_shape_predict]  # here will be cartesian product of result from colour and shape
     metric = metrics(y_predict, y_test, number_of_colours, number_of_shaps)  # TODO better metrics
     return metric
+
+
