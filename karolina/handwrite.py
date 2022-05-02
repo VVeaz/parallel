@@ -6,6 +6,7 @@ import imageio
 import numpy as np
 import os
 import cv2
+import time
 from PIL import Image
 from tensorflow.keras.utils import to_categorical
 from own_functions import load_pictures, read_labels, test_parallel, metrics
@@ -323,7 +324,7 @@ y_set_shape_test = np.array(tf.one_hot(labels_shapes_test, NUMBER_OF_SHAPES))
 y_set_both_test = [y_set_colour_test, y_set_shape_test]
 
 
-def train_and_test():
+def train_and_test(num_of_e=1):
     # ======================================
     # MODELS
     # --------- a model for recognizing color and shape (which will say, for example, "0, 7" - red seven)
@@ -356,8 +357,8 @@ def train_and_test():
                             'shape_output': tf.keras.losses.CategoricalCrossentropy()
                         },
                         metrics=['accuracy', tf.metrics.Precision()])
-    print("Shape summary:")
-    print(model_shape.summary())
+    # print("Shape summary:")
+    # print(model_shape.summary())
 
     #  mix sets
     # x_train_sh, y_set_colour_train_sh, y_set_shape_train_sh = shuffle_sets(coloured_train_images, labels_colour_train,
@@ -368,7 +369,10 @@ def train_and_test():
     # print(dict(zip(model_both.metrics_names, result)))
 
     #  train one network (both features)
-    model_both.fit(x_train, [y_set_colour_train, y_set_shape_train], epochs=1)
+
+    start = time.process_time()
+    model_both.fit(x_train, [y_set_colour_train, y_set_shape_train], epochs=3)
+    time_both = time.process_time() - start
 
     #  look at how shape_output_accuracy is changed in this model
     # plt.interactive(False)
@@ -387,13 +391,17 @@ def train_and_test():
     # print(dict(zip(model_shape.metrics_names, result)))
 
     #  train model colour
-    model_colour.fit(x_train, y_set_colour_train, epochs=1)
+    start = time.process_time()
+    model_colour.fit(x_train, y_set_colour_train, epochs=num_of_e)
+    time_c = time.process_time() - start
     #
     # x_train_sh, y_set_colour_train_sh, y_set_shape_train_sh = shuffle_sets(train_images, labels_colour_train,
     #                                                                        labels_shapes_train)
     #  train model shape
-    model_shape.fit(x_train_black, y_set_shape_train, epochs=1)
-    model_shape.fit(x_train, y_set_shape_train, epochs=1)
+    start = time.process_time()
+    model_shape.fit(x_train_black, y_set_shape_train, epochs=1) #!!!!!!!!!!! uwaga odkomentuj potem
+    model_shape.fit(x_train, y_set_shape_train, epochs=num_of_e)
+    time_s = time.process_time() - start
 
     #  look at how accuracy is changed in this model
     # plt.interactive(False)
@@ -401,18 +409,22 @@ def train_and_test():
     # plt.show()
 
     return metrics(model_both.predict(x_test), y_set_both_test, NUMBER_OF_COLOURS, NUMBER_OF_SHAPES), test_parallel(
-        model_colour, model_shape, x_test, y_set_both_test, NUMBER_OF_COLOURS, NUMBER_OF_SHAPES)
+        model_colour, model_shape, x_test, y_set_both_test, NUMBER_OF_COLOURS, NUMBER_OF_SHAPES), time_both, time_c+time_s
 
 
 def test_and_train_times(iterations=5):
     boths = []
     pars = []
+    boths_times = []
+    pars_times = []
     for i in range(iterations):
         print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
         print(i)
-        b, p = train_and_test()
+        b, p, b_time, p_time = train_and_test(1)
         boths.append(b)
         pars.append(p)
+        boths_times.append(b_time)
+        pars_times.append(p_time)
     print(type_picture)
     print("------------ one (both in one)")
     print(sum(boths) / iterations)
@@ -420,13 +432,19 @@ def test_and_train_times(iterations=5):
     print("------------ pararel")
     print(sum(pars) / iterations)
     print(pars)
+    print("------------ one (both in one) TIME")
+    print(sum(boths_times) / iterations)
+    print(boths_times)
+    print("------------ pararel TIME")
+    print(sum(pars_times) / iterations)
+    print(pars_times)
 
 #
 # both, par = train_and_test()
 # print("Accuracy one network (both features): " + str(both))
 # print("Accuracy parallel network: " + str(par))
 
-# test_and_train_times(10)
+test_and_train_times(5)
 
 # statistic_digits = {0: [0, 0, 0], 1: [0, 0, 0], 2: [0, 0, 0], 3: [0, 0, 0], 4: [0, 0, 0], 5: [0, 0, 0],
 #                     6: [0, 0, 0], 7: [0, 0, 0], 8: [0, 0, 0], 9: [0, 0, 0]}
