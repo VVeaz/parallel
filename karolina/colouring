@@ -1,0 +1,167 @@
+import tensorflow as tf
+import random as rnd
+import imageio
+import numpy as np
+import os
+from tensorflow.keras.datasets import mnist
+
+
+def save_label_to_file(label, name, root_dir):
+    label_shape_filename = os.path.join(root_dir, "label_" + name + ".txt")
+    os.makedirs(os.path.dirname(label_shape_filename), exist_ok=True)
+    with open(label_shape_filename, "w") as file_shape:
+        file_shape.write(str(label))
+
+
+def save_labels_to_files(list_of_labels, root_dir):
+    c = 0
+    for label in list_of_labels:
+        save_label_to_file(label, str(c), root_dir)
+        c += 1
+
+
+def get_random_colour():
+    colour = [0, 0, 0]
+    index = rnd.randint(0, 2)
+    colour[index] = 255
+    return colour, index
+
+
+def get_random_colour_for_back(colour_foreground):
+    colour = [0, 0, 0]
+    index = rnd.randint(0, 1)
+    if index == colour_foreground:
+        random_one = 1
+        if rnd.randint(0, 99) % 2 == 0:
+            random_one = -1
+        index = (index + random_one) % 3
+    colour[index] = 255
+    return colour
+
+
+#  this function colors one picture with digit
+def colour_digit(not_coloured_digit, colour_background=False, colour_background_randomly=False):
+    colour_of_digit, colour_number = get_random_colour()
+    if colour_background:
+        one_back_colour = get_random_colour_for_back(colour_number)
+    else:
+        one_back_colour = [0, 0, 0]
+
+    coloured_digit = []
+    c = 0
+    for row in not_coloured_digit:
+        d = 0
+        one_row = []
+        for pixel in row:
+            if pixel != 0:
+                one_row.append(tf.convert_to_tensor(colour_of_digit, dtype=tf.uint8))
+            elif colour_background_randomly:
+                one_row.append(tf.convert_to_tensor(get_random_colour_for_back(colour_number), dtype=tf.uint8))
+            else:
+                one_row.append(tf.convert_to_tensor(one_back_colour, dtype=tf.uint8))
+            d += 1
+        one_row_tensor = tf.convert_to_tensor(one_row)
+        coloured_digit.append(one_row_tensor)
+        c += 1
+    return coloured_digit, colour_number
+
+
+#  this function colors the picture set with numbers, save it in root_dir, and save color labels
+#  in colour_labels_di
+def colour_dataset(dataset, root_dir, colour_background=False, colour_background_randomly=False,
+                   colour_labels_dir=None):
+    coloured_dataset = []
+    colour_labels = []
+    c = 0
+    for img in dataset:
+        coloured_img, colour_nr = colour_digit(img, colour_background, colour_background_randomly)
+        coloured_dataset.append(coloured_img)
+        colour_labels.append(colour_nr)
+        imageio.imwrite(root_dir + "/example_" + str(c) + ".png", np.array(coloured_img))
+        if colour_labels_dir is not None:
+            save_label_to_file(colour_nr, str(c), colour_labels_dir)
+        c += 1
+    return coloured_dataset, colour_labels
+
+
+def save_coloured_generated_set_of_digits(directory_with_base, dir_for_pic, dir_for_bw_pic, dir_for_color,
+                                          dir_for_shape, colour_background=False, colour_background_randomly=False):
+    for subdir, dirs, files in os.walk(directory_with_base):
+        for file in files:
+
+            # label from shape
+            ###################
+            img = imageio.imread(directory_with_base + "/" + file, pilmode="L")
+            shape_of_digit = file.split(".")[0]
+            factor = rnd.randint(171, 180)
+            for i in range(factor):
+                coloured_img, colour_nr = colour_digit(img, colour_background, colour_background_randomly)
+
+                imageio.imwrite(dir_for_bw_pic + "/generated_" + str(i) + "_" + str(shape_of_digit) + ".png",
+                                img)
+                imageio.imwrite(dir_for_pic + "/generated_" + str(i) + "_" + str(shape_of_digit) + ".png",
+                                np.array(coloured_img))
+                save_label_to_file(colour_nr, str(i) + '_' + shape_of_digit, dir_for_color)
+                save_label_to_file(shape_of_digit, str(i) + '_' + shape_of_digit, dir_for_shape)
+
+
+def to_rgb(not_coloured_digit):
+    one_back_colour = [0, 0, 0]
+    one_foreground = [255, 255, 255]
+    coloured_digit = []
+    c = 0
+    for row in not_coloured_digit:
+        d = 0
+        one_row = []
+        for pixel in row:
+            if pixel != 0:
+                one_row.append(tf.convert_to_tensor(one_foreground, dtype=tf.uint8))
+            else:
+                one_row.append(tf.convert_to_tensor(one_back_colour, dtype=tf.uint8))
+            d += 1
+        one_row_tensor = tf.convert_to_tensor(one_row)
+        coloured_digit.append(one_row_tensor)
+        c += 1
+    return coloured_digit
+
+
+def save_gray_set(dataset, root_dir):
+    coloured_dataset = []
+    c = 0
+    for img in dataset:
+        coloured_img = to_rgb(img)
+        coloured_dataset.append(coloured_img)
+        imageio.imwrite(root_dir + "/example_" + str(c) + ".png", np.array(coloured_img))
+        c += 1
+
+# (train_images, train_labels), (test_images, test_labels) = mnist.load_data()
+# train_images = train_images.reshape((train_images.shape[0], 28, 28, 1))
+
+# save original mnist to files to easier loading
+# save_gray_set(train_images, "black_white_digits")
+# train_images - 60000 black&white handwrite digits;
+# test_images - 10000 black&white handwrite digits;
+# colored below
+# train_labels, test_labels -> shape labels
+# =======================================================
+# COLOR pictures and save them and save labels (of colors and shapes to files)
+
+# colour_dataset(train_images, "digits_coloured_train", True, False, "digits_labels_colour_train")
+# colour_dataset(test_images, "digits_coloured_test", True, False, "digits_labels_colour_test")
+
+# colour_dataset(train_images, "colourful_background/digits_train", True, False, "colourful_background/labels_train")
+# colour_dataset(test_images, "colourful_background/digits_test", True, False, "colourful_background/labels_test")
+
+# colour_dataset(train_images, "colourful_background_random/digits_train", True, True,
+# "colourful_background_random/labels_train")
+# colour_dataset(test_images, "colourful_background_random/digits_test",
+# True, True, "colourful_background_random/labels_test")
+#
+# save shape labels
+# save_labels_to_files(train_labels, "digits_labels_shapes_train")
+# save_labels_to_files(test_labels, "digits_labels_shapes_test")
+
+# below is not MNIST things, just colouring my handmade
+# save_coloured_generated_set_of_digits("generated_digits", 
+# ... todo
+# =======================================================================
