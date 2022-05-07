@@ -2,19 +2,10 @@
 This is LaBeLaToR
 run in a folder one higher than "ALL_ONCE"
 """
-import glob
 import os
 import random
 import shutil
 from shutil import copyfile
-
-from PIL import Image
-
-
-def rgb2int(rgb): return (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
-
-
-letter_to_rgb = {"r": (255, 0, 0), "g": (0, 255, 0), "b": (0, 0, 255)}
 
 letter_to_cat = {"r": 0, "g": 1, "b": 2}
 
@@ -134,7 +125,6 @@ def make_labels(root_dir, label_dir, prefix, shapes_array, new_dir, colour="x"):
                 os.makedirs(os.path.dirname(label_colour_filename), exist_ok=True)
 
                 with open(label_colour_filename, "w") as file_colour:
-                    # file_colour.write(str(rgb2int(letter_to_rgb[foreground_colour])))
                     file_colour.write(str(letter_to_cat[foreground_colour]))
 
 
